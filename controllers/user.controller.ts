@@ -1,9 +1,11 @@
 import { Response } from "express";
 import IRequest from "../utils/IRequest";
 import { IUser, User } from "../models/user.model";
+import ErrorHandler from "../utils/ErrorHandler";
 
 export default {
   getUser: async (req: IRequest, res: Response) => {
+    console.log("req.user ", req.user);
     if (req.user) res.status(200).json({ success: true, data: req.user });
     else
       res
@@ -16,29 +18,36 @@ export default {
     res.status(200).json({ success: true, data: users });
   },
   register: async (req: IRequest, res: Response) => {
-    if (req.body.password !== req.body.confirmPassword) {
-      const data: IUser = req.body;
-      const newUser: IUser = await User.create<IUser>(data);
-      const returnData: Object = { ...newUser };
-      res
-        .status(201)
-        .json({ success: true, data: { ...returnData, password: null } });
-    }
-    res.status(400).json({ success: false, message: "Passwords do not match" });
+    ErrorHandler(req, res, async () => {
+      if (req.body.password === req.body.confirmPassword) {
+        const data: IUser = req.body;
+        const newUser: IUser = await User.create<IUser>(data);
+        const returnData: Object = { ...newUser };
+        return res
+          .status(201)
+          .json({ success: true, data: { ...returnData, password: null } });
+      }
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
+    });
   },
   login: async (req: IRequest, res: Response) => {
     const { email, password } = req.body;
+    // console.log("email ", email);
+    // console.log("password ", password);
+    // return res.status(200).json({ success: true, data: {} });
     if (!email || !password)
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: "Please provide an email and password",
       });
     const token = await User.login(email, password);
     if (token) {
       res.cookie("token", token, { httpOnly: true });
-      res.status(200).json({ success: true, data: token });
+      return res.status(200).json({ success: true, data: token });
     } else
-      res
+      return res
         .status(400)
         .json({ success: false, message: "Invalid email or password" });
   },
@@ -46,23 +55,32 @@ export default {
     res.cookie("token", "", { maxAge: 1 });
     res.status(200).json({ success: true, data: {} });
   },
-  // forgotPassword: (req: IRequest, res: Response) => {},
-  resetPassword: (req: IRequest, res: Response) => {
-    const { password, confirmPassword } = req.body;
-    if (password !== confirmPassword)
-      res
-        .status(400)
-        .json({ success: false, message: "Passwords do not match" });
-    User.updateOne(
-      { _id: req.user?._id },
-      { password },
-      { runValidators: true }
-    )
-      .then((user) => {
-        res.status(200).json({ success: true, data: user });
-      })
-      .catch((err) => {
-        res.status(400).json({ success: false, message: err.message });
+  resetPassword: async (req: IRequest, res: Response) => {
+    const { currentPassword, password, confirmPassword } = req.body;
+    const match = await User.matchPassword(
+      currentPassword,
+      req.user?.password as string
+    );
+    if (req.user && match) {
+      if (password !== confirmPassword)
+        return res
+          .status(400)
+          .json({ success: false, message: "Passwords do not match" });
+      User.updateOne(
+        { _id: req.user?._id },
+        { password },
+        { runValidators: true }
+      )
+        .then((user) => {
+          return res.status(200).json({ success: true, data: user });
+        })
+        .catch((err) => {
+          return res.status(400).json({ success: false, message: err.message });
+        });
+    } else
+      return res.status(400).json({
+        success: false,
+        message: "Invalid current password or not logged in",
       });
   },
   // updateDetails: (req: IRequest, res: Response) => {},

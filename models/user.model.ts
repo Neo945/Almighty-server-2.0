@@ -14,7 +14,10 @@ interface IUser {
 
 interface UserModel extends Model<IUser> {
   login: (email: string, password: string) => Promise<string | null>;
-  matchPassword: (password: string) => Promise<boolean>;
+  matchPassword: (
+    enteredPassword: string,
+    hashedPassword: string
+  ) => Promise<boolean>;
 }
 
 const UserSchema = new Schema<IUser, UserModel>(
@@ -47,21 +50,35 @@ const UserSchema = new Schema<IUser, UserModel>(
   }
 );
 
-UserSchema.pre("save", async function (next) {
-  const salt: string | Buffer = await bcrypt.genSalt(10);
+UserSchema.pre("save", async function (this: any, next: Function) {
+  const salt: string | Buffer = await bcrypt.genSalt();
   const hash: string = await bcrypt.hash(this.password as string, salt);
   this.set("password", hash);
   next();
 });
 
-UserSchema.methods.matchPassword = async function (enteredPassword: string) {
-  return await bcrypt.compare(enteredPassword, this.password);
+UserSchema.pre("updateOne", async function (next: Function) {
+  const data = (this.getUpdate() as any).password;
+  const salt: string | Buffer = await bcrypt.genSalt();
+  const hash: string = await bcrypt.hash(data as string, salt);
+  this.setUpdate({
+    password: hash,
+  });
+  next();
+});
+
+UserSchema.statics.matchPassword = async function (
+  enteredPassword: string,
+  hashedPassword: string
+) {
+  return await bcrypt.compare(enteredPassword, hashedPassword);
 };
 
 UserSchema.statics.login = async function (email: string, password: string) {
   const user = await this.findOne({ email }).select("+password");
   if (user) {
-    const isMatch = await bcrypt.compare(user.password as string, password);
+    const isMatch = await bcrypt.compare(password, user.password as string);
+    console.log("isMatch ", isMatch);
     if (isMatch) return user._id;
   }
   return null;
