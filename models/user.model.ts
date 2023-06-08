@@ -59,12 +59,16 @@ UserSchema.pre("save", async function (this: any, next: Function) {
 
 UserSchema.pre("updateOne", async function (next: Function) {
   const data = (this.getUpdate() as any).password;
-  const salt: string | Buffer = await bcrypt.genSalt();
-  const hash: string = await bcrypt.hash(data as string, salt);
-  this.setUpdate({
-    password: hash,
-  });
-  next();
+  if (data) {
+    const salt: string | Buffer = await bcrypt.genSalt();
+    const hash: string = await bcrypt.hash(data as string, salt);
+    this.setUpdate({
+      password: hash,
+    });
+    next();
+  } else {
+    next();
+  }
 });
 
 UserSchema.statics.matchPassword = async function (

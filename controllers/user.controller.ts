@@ -94,4 +94,15 @@ export default {
         res.status(400).json({ success: false, message: err.message });
       });
   },
+  updateDetails: (req: IRequest, res: Response) => {
+    const { _id } = req.user!;
+    const { name, email } = req.body;
+    User.updateOne({ _id }, { name, email }, { runValidators: true })
+      .then((user) => {
+        return res.status(200).json({ success: true, data: user });
+      })
+      .catch((err) => {
+        return res.status(400).json({ success: false, message: err.message });
+      });
+  },
 };

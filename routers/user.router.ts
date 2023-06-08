@@ -9,5 +9,6 @@ router.post("/login", UserController.login);
 router.get("/logout", UserController.logout);
 router.post("/reset", UserController.resetPassword);
 router.get("/delete", UserController.deleteUser);
+router.post("/update", UserController.updateDetails);
 
 export default router;
