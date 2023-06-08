@@ -5,6 +5,9 @@ import cookieParser from "cookie-parser";
 import router from "./router";
 import morgan from "morgan";
 import { SimpleAuthMiddleware } from "./middlewares/SimpleAuth";
+import dotenv from "dotenv";
+import JWTAuth from "./middlewares/JWTAuth";
+dotenv.config();
 
 const app: express.Application = express();
 app.use(cookieParser());
@@ -31,7 +34,7 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
 
-app.use("/api", SimpleAuthMiddleware as any, router);
+app.use("/api", JWTAuth as any, router);
 
 connect(MONGO_URI)
   .then(() => {
