@@ -4,9 +4,10 @@ import { Error, connect } from "mongoose";
 import cookieParser from "cookie-parser";
 import router from "./router";
 import morgan from "morgan";
-import { SimpleAuthMiddleware } from "./middlewares/SimpleAuth";
+// import { SimpleAuthMiddleware } from "./middlewares/SimpleAuth";
 import dotenv from "dotenv";
 import JWTAuth from "./middlewares/JWTAuth";
+import session from "express-session";
 dotenv.config();
 
 const app: express.Application = express();
@@ -29,6 +30,19 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/static", express.static("public"));
+
+app.use(
+  session({
+    secret: process.env.SECRET_KEY as string,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 3,
+      path: "/",
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false,
+    },
+  })
+);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
