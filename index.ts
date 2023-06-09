@@ -48,7 +48,8 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello World!");
 });
 
-app.use("/api", JWTAuth as any, router);
+// app.use("/api", JWTAuth as any, router);
+app.use("/api", router);
 
 connect(MONGO_URI)
   .then(() => {

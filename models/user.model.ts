@@ -95,7 +95,8 @@ UserSchema.statics.login = async function (email: string, password: string) {
   const user = await this.findOne({ email }).select("+password");
   if (user) {
     const isMatch = await bcrypt.compare(password, user.password as string);
-    if (isMatch) return getToken(user._id);
+    // if (isMatch) return getToken(user._id);
+    if (isMatch) return user;
   }
   return null;
 };

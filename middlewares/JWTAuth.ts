@@ -13,15 +13,20 @@ export default function (req: any, res: Response, next: NextFunction) {
           req.user = null;
           next();
         } else {
-          User.findById(decoded.id)
-            .then((user) => {
-              req.user = user;
-              next();
-            })
-            .catch((err) => {
-              req.user = null;
-              next();
-            });
+          if (decoded.id)
+            User.findById(decoded.id)
+              .then((user) => {
+                req.user = user;
+                next();
+              })
+              .catch((err) => {
+                req.user = null;
+                next();
+              });
+          else {
+            req.user = null;
+            next();
+          }
         }
       }
     );

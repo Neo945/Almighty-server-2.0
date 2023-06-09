@@ -5,8 +5,9 @@ import ErrorHandler from "../utils/ErrorHandler";
 
 export default {
   getUser: async (req: IRequest, res: Response) => {
-    console.log("req.user ", req.user);
-    if (req.user) res.status(200).json({ success: true, data: req.user });
+    // console.log("req.user ", req.user);
+    if ((req.session as any).user)
+      res.status(200).json({ success: true, data: (req.session as any).user });
     else
       res
         .status(404)
@@ -34,9 +35,6 @@ export default {
   },
   login: async (req: IRequest, res: Response) => {
     const { email, password } = req.body;
-    // console.log("email ", email);
-    // console.log("password ", password);
-    // return res.status(200).json({ success: true, data: {} });
     if (!email || !password)
       return res.status(400).json({
         success: false,
@@ -44,15 +42,16 @@ export default {
       });
     const token = await User.login(email, password);
     if (token) {
-      res.cookie("token", token, { httpOnly: true });
-      return res.status(200).json({ success: true, data: token });
+      (req.session as any).user = token;
+      return res.status(200).json({ success: true, data: (token as any)._id });
     } else
       return res
         .status(400)
         .json({ success: false, message: "Invalid email or password" });
   },
   logout: (req: IRequest, res: Response) => {
-    res.cookie("token", "", { maxAge: 1 });
+    // res.cookie("token", "", { maxAge: 1 });
+    (req.session as any).user = null;
     res.status(200).json({ success: true, data: {} });
   },
   resetPassword: async (req: IRequest, res: Response) => {
