@@ -11,6 +11,7 @@ interface IUser {
   password: Object | string;
   createdAt?: Date;
   updatedAt?: Date;
+  isVerified?: boolean;
 }
 
 interface UserModel extends Model<IUser> {
@@ -44,6 +45,10 @@ const UserSchema = new Schema<IUser, UserModel>(
         "Password must contain at least 1 lowercase, 1 uppercase, 1 number, and 1 special character",
       ],
       select: false,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
     },
   },
   {
